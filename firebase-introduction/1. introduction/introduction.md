@@ -21,10 +21,12 @@ If you've build web or native applications without Firebase, you've implemented 
 - File storage backed by Google Cloud Storage
 - Static file hosting
 - Treat data as streams to build highly scalable applications
+- Don't worry about your infrastructure!
 
 ## Disadvantages of Firebase
 - Limited query abilities due to Firebase's data stream model
 - Traditional relational data models are not applicable to NoSQL; therefore, your SQL chops will not transfer
+- No on-premise installation
 
 ## Create your first Firebase
 Let's get start by creating a Firebase project on Google Cloud.
@@ -47,11 +49,30 @@ Every other database out there requires you to make HTTP calls to get and sync y
 
 When you connect your app to Firebase, you're not connecting through normal HTTP. You're connecting through a WebSocket. WebSockets are [much, much faster than HTTP](http://www.websocket.org/quantum.html). You don't have to make individual WebSocket calls, because one socket connection is plenty. All of your data syncs automagically through that single WebSocket as fast as your client's network can carry it.
 
-Firebase send you new data as soon as it's updated. When your client saves a change to the data, all connected clients receive the updated data almost instantly. 
+Firebase sends you new data as soon as it's updated. When your client saves a change to the data, all connected clients receive the updated data almost instantly. 
 
 ## Storage
 
 ## Hosting
+Firebase includes an easy-to-use hosting service for all of your static files. Firebase hosting utilizes [Superstatic](https://github.com/firebase/superstatic), which you can run locally for all of your testing. I run Superstatic as [BrowserSync](https://www.browsersync.io/) middleware. The following implementation uses Gulp, but Gulp is purely optional.
+
+```
+var gulp = require('gulp');
+var superstatic = require('superstatic');
+var browserSync = require('browser-sync').create();
+
+gulp.task('serve', function() {
+  browserSync.init({
+    server: {
+      middleware: [superstatic({stack: 'strict'})]
+    }
+  });
+  gulp.watch('public/*.html').on('change', browserSync.reload);
+});
+
+```
+
+The BrowserSync + Superstatic development environment is slick. BrowserSync handles reloading your development app across all connected devices and Superstatic replicates Firebase hosting locally in such a way that you can deploy straight to Firebase for production use.
 
 ## The Rest
-
+The Firebase team is hard at work building more features to further integrate into Google Cloud Platform. These features are under development as I write this, so I'll circle back and provide more details as the systems stabilize.
