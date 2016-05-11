@@ -12,11 +12,10 @@
   <script src="/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="/elements/elements.html">
   <style is="custom-style" include="shared-styles iron-flex iron-flex-alignment"></style>
-  <script src="/bower_components/lodash/lodash.min.js"></script>
+  <script src="/bower_components/lodash/dist/lodash.min.js"></script>
   <script type="text/javascript">
     function __loadFirebaseEnv(data) {
       window.rawEnvData = data;
-      console.log('here', data);
       window.env = _.merge(data.default, data[location.hostname.split('.').join(':')]);
     }
   </script>
@@ -38,8 +37,8 @@
           <images-filter id="imagesFilter" filter-text="{{filterText}}" style="width: 75vw; max-width: 50rem;" on-focused="handleFilterFocused" active="[[isActive('images', routeData.*, user)]]"></images-filter>
           <tags-selector id="tagsSelector" tags="[[tags]]" included-tags="{{includedTags}}" excluded-tags="{{excludedTags}}" filter-type="{{filterType}}"></tag-selector>
         </div>
-        <scroll-controller>
-          <images-list id="imagesList" ref="[[ref]]" env="[[env]]" filter-text="[[filterText]]" tags="{{tags}}" included-tags="[[includedTags]]" excluded-tags="[[excludedTags]]" filter-type="[[filterType]]" active="[[isActive('images', routeData.*, user)]]"></images-list>
+        <scroll-controller id="scrollController" active="[[isActive('images', routeData.*, user)]]" on-scrolled-top="handleScrolledTop" on-scrolled-bottom="handleScrolledBottom">
+          <images-list id="imagesList" ref="[[ref]]" env="[[env]]" filter-text="[[filterText]]" tags="{{tags}}" included-tags="[[includedTags]]" excluded-tags="[[excludedTags]]" filter-type="[[filterType]]" active="[[isActive('images', routeData.*, user)]]" on-tags-changed="handleListResize"></images-list>
         </scroll-controller>    
       </section>
       <section data-page="image">
@@ -88,6 +87,17 @@
     app.tags = [];
     app.includedTags = [];
     app.excludedTags = [];
+    
+    app.handleScrolledTop = function() {
+      app.$.imagesList.pageUp();
+    };
+    app.handleScrolledBottom = function() {
+      app.$.imagesList.pageDown();
+    };
+    
+    app.handleListResize = function() {
+      app.$.scrollController.setTop();
+    }
   </script>
 </body>
 

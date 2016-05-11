@@ -12,9 +12,9 @@ gulp.task('serve', function () {
     server: {
       baseDir: ['app'],
       middleware: [superstatic()],
-      routes: {
-        '/bower_components': 'bower_components'
-      }
+      // routes: {
+      //   '/bower_components': 'bower_components'
+      // }
     }
   });
   gulp.watch(['app/**/*.html'], browserSync.reload);
@@ -31,44 +31,31 @@ gulp.task('env', function(done) {
     });
 });
 
+// Reference: https://github.com/PolymerElements/polymer-starter-kit/blob/master/gulpfile.js
 gulp.task('vulcanize', function(done) {
+  
   gulp.src([
     'app/index.html'
   ])
     .pipe(gulp.dest('dist'));
   
   gulp.src([
-    'app/styles/**/*'
-  ])
-    .pipe(gulp.dest('dist/styles'));
-  
-  gulp.src([
-    'bower_components/webcomponentsjs/webcomponents-lite.min.js'
+    'app/bower_components/webcomponentsjs/webcomponents-lite.min.js'
   ])
     .pipe(gulp.dest('dist/bower_components/webcomponentsjs'));
   
   gulp.src([
-    'bower_components/lodash/dist/lodash.min.js'
+    'app/bower_components/lodash/dist/lodash.min.js'
   ])
-    .pipe(gulp.dest('dist/bower_components/lodash'));
+    .pipe(gulp.dest('dist/bower_components/lodash/dist'));
   
   gulp.src('app/elements/elements.html')
     .pipe(vulcanize({
-      abspath: '',
-      excludes: [],
-      redirects: [
-        __dirname + '/app/bower_components|./bower_components',
-        // '/elements|./app/elements',
-        // '/styles|./app/styles',
-      ],
       stripComments: true,
-      stripExcludes: false,
       inlineScripts: true,
       inlineCss: true
     }))
-    // .pipe(minifyInline({
-    //   js: false
-    // }))
+    .pipe(minifyInline())
     .pipe(gulp.dest('dist/elements'));
 });
 

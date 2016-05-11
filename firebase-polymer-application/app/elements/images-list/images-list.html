@@ -13,7 +13,7 @@
 <link rel="import" href="../../styles/shared-styles.html">
 
 <script src="../../bower_components/fuse.js/src/fuse.min.js"></script>
-<script src="../../bower_components/lodash/lodash.min.js"></script>
+<script src="../../bower_components/lodash/dist/lodash.min.js"></script>
 
 <dom-module id="images-list">
   <template>
@@ -36,7 +36,7 @@
         height: 100%;
       }
       
-      paper-material img {
+      img {
         max-width: 100%;
         max-height: 100%;
       }
@@ -58,7 +58,16 @@
         font-weight: 300;
       }
       
-      paper-material .link {
+      paper-material .image-number {
+        position: absolute;
+        bottom: .5rem;
+        left: 1rem;
+        opacity: 0.3;
+        height: 1.3rem;
+        z-index: 1;
+      }
+      
+      .link {
         position: fixed;
         top: -1000rem;
         left: -1000rem;
@@ -80,11 +89,14 @@
     </style>
     <div id="list" class="layout horizontal wrap">
       <template id="imagesTemplate" is="dom-repeat" items="[[filteredImages]]" as="image" filter="_filterByTag">
-        <paper-material elevation$="{{getElevation(index, selectedIndex)}}" class="layout vertical center-justified center" filename="[[image.name]]">
+        <paper-material elevation$="{{getElevation(index, selectedIndex)}}" class="layout vertical center-justified center" filename="[[image.name]]" number$="[[image.number]]">
           <tag-pill-box image="[[image]]"></tag-pill-box>
           <img is="gcloud-image" image="[[image]]"/>
           <div class="title">
             [[image.name]]
+          </div>
+          <div class="image-number">
+            [[getImageNumber(image.index)]]
           </div>
           <textarea class="link">![[[image.name]]](https://console.cloud.google.com/m/cloudstorage/b/[[image.bucket]]/o/[[image.name]])</textarea>
           <paper-ripple></paper-ripple>
@@ -124,7 +136,7 @@
         },
         filteredImages: {
           type: Array,
-          computed: '_filterImages(filterText, images.splices)'
+          computed: '_filterImages(filterText, images.splices, spliceStart, spliceEnd)'
         },
         tags: {
           type: Array,
@@ -144,10 +156,30 @@
         selectedIndex: {
           type: Number,
           value: -1
-        }
+        },
+        spliceStart: {
+          type: Number,
+          value: 0 
+        },
+        spliceEnd: {
+          type: Number,
+          value: 30
+        },
+        pageSize: {
+          type: Number,
+          value: 30
+        },
+        pageIncrement: {
+          type: Number,
+          value: 20
+        },
+        pageCursor: Number
       },
       
-      observers: ['_render(images.splices, includedTags.splices, excludedTags.splices, filterType)'],
+      observers: [
+        '_render(images.splices, includedTags.splices, excludedTags.splices, filterType)',
+        '_resetPageCursor(includedTags.splices, excludedTags.splices, filterType)',
+      ],
       
       _render: function() {
         this.debounce('render', function() {
@@ -230,11 +262,22 @@
       },
       
       _filterImages: function(filterText) {
+        var filteredImages;
         if (filterText) {
-          return this.fuse.search(filterText);  
+          filteredImages = this.fuse.search(filterText);
+          this.pageUp(0);
         } else {
-          return _.sortBy(this.images, 'name');
+          filteredImages = _.sortBy(this.images, 'name');
         }
+        
+        var i = filteredImages.length;
+        while (i--) {
+          filteredImages[i].index = i; 
+        }
+        // console.log('text filter applying only to page!!!');
+        // return filteredImages.splice(this.spliceStart, this.spliceEnd);
+        this._resetPageCursor();
+        return filteredImages;
       },
       
       incrementSelectedIndex: function() {
@@ -286,31 +329,79 @@
         }, []);
       },
       
+      _resetPageCursor: function() {
+        this.set('pageCursor', 0);
+      },
+      
       _filterByTag: function(image) {
         var imageTags = this.getImageTags(image);
         var i = imageTags.length;
-        
-        if (this.filterType === 'include') {
-          if (!i) {
-            return false;
-          }
-          while (i--) {
-            if (~this.includedTags.indexOf(imageTags[i])) {
+        var returnIt = function(returnValue) {
+          if (returnValue) {
+            if (this.pageCursor >= this.spliceStart && this.pageCursor <= this.spliceEnd) {
+              this.pageCursor += 1;
               return true;
-            }
-          } 
-          return false;
-        } else {
-          if (!i) {
-            return true;
-          }
-          while (i--) {
-            if (~this.includedTags.indexOf(imageTags[i])) {
+            } else {
+              this.pageCursor += 1;
               return false;
             }
           }
-          return true;
+          return false;
+        }.bind(this);
+        
+        if (this.filterType === 'include') {
+          if (!i) {
+            return returnIt(false);
+          }
+          while (i--) {
+            if (~this.includedTags.indexOf(imageTags[i])) {
+              return returnIt(true);
+            }
+          } 
+          return returnIt(false);
+        } else {
+          if (!i) {
+            return returnIt(true);
+          }
+          while (i--) {
+            if (~this.includedTags.indexOf(imageTags[i])) {
+              return returnIt(false);
+            }
+          }
+          return returnIt(true);
         }
+      },
+      
+      pageUp: function(index) {
+        if (index) {
+          this.set('spliceStart', index);
+          this.set('spliceEnd', this.pageSize);
+        } else if (this.spliceStart) {
+          this.evaluateScroll(this.querySelector('paper-material').getAttribute('index'));
+          this.set('spliceStart', Math.max(0, this.spliceStart - this.pageIncrement));
+          this.set('spliceEnd', Math.max(this.pageSize, this.spliceEnd - this.pageIncrement));
+        }
+        // console.log(this.spliceStart, this.spliceEnd);
+      },
+      
+      pageDown: function() {
+        // Uncomment to carve off the beginning of list. Feels janky, but could help for huge image sets
+        // this.set('spliceStart', Math.max(0, this.spliceStart + this.pageIncrement));
+        this.set('spliceEnd', Math.min(this.images.length, this.spliceEnd + this.pageIncrement));
+        console.log(this.spliceStart, this.spliceEnd);
+      },
+      
+      scrollToIndex: function(index) {
+        setTimeout(function() {
+          var el = this.querySelector('paper-material[index="' + index + '"]');
+          if (el) {
+            el.scrollIntoView();  
+          }
+        }.bind(this));
+      },
+      
+      getImageNumber: function(i) {
+        return i + 1;
       }
     });
   </script>

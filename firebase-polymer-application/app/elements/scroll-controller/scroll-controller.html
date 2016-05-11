@@ -1,1 +1,50 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../elements/active-behavior/active-behavior.html">
+<dom-module id="scroll-controller">
+  <template>
+    <style>
+      :host {
+        display: block;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        overflow-y: scroll;
+      }
+    </style>
+    <content></content>
+  </template>
+  <script>
+    Polymer({
+      is: 'scroll-controller',
+      
+      behaviors: [Quiver.ActiveBehavior],
+      
+      attach: function() {
+        this.__handleScroll = this._handleScroll.bind(this);
+        this.__setTop = this.setTop.bind(this);
+        this.addEventListener('scroll', this.__handleScroll);
+        window.addEventListener('resize', this.__setTop);
+      },
+      
+      detach: function() {
+        this.removeEventListener('scroll', this.__handleScroll);
+        window.removeEventListener('resize', this.__setTop);
+      },
+      
+      _handleScroll: function() {
+        if (this.scrollTop === 0) {
+          this.fire('scrolled-top');
+        } else if (this.scrollHeight === this.clientHeight + this.scrollTop) {
+          this.fire('scrolled-bottom');
+        }
+      },
+      
+      setTop: function() {
+        var siblings = this.parentElement.children;
+        var previousSibling = siblings[0];
+        this.style.top = previousSibling.scrollHeight + 16;
+      }
+    });
+  </script>
+</dom-module>
