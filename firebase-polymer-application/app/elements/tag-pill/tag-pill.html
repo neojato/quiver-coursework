@@ -1,0 +1,34 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-ripple/paper-ripple.html">
+<dom-module id="tag-pill">
+  <template>
+    <style>
+      :host {
+        display: inline-block;
+        font-size: .8rem;
+        padding: 2px 8px;
+        background: var(--default-primary-color);
+        border-radius: 8px;
+        color: var(--text-primary-color);
+        font-weight: 100;
+        margin: .25rem;
+      }
+      
+      :host[clickable]:after {
+        content: "x";
+        margin-left: .5rem;
+      }
+      
+      :host[clickable]:hover {
+        cursor: pointer;
+      }
+    </style>
+    <content></content>
+    <paper-ripple></paper-ripple>
+  </template>
+  <script>
+    Polymer({
+      is: 'tag-pill'
+    });
+  </script>
+</dom-module>

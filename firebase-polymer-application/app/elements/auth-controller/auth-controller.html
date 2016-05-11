@@ -1,0 +1,112 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<!--<link rel="import" href="../../bower_components/firebase-ui/firebase-ui.html">
+<link rel="import" href="../../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">-->
+<dom-module id="auth-controller">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+      
+      #account-menu {
+        position: absolute;
+        top: 1rem;
+        right: 2rem;
+      }
+    </style>
+    <firebase-ui
+      id="firebaseUI"
+      user="{{user}}"
+      api-key="[[env.firebase.apiKey]]" 
+      database-url="[[env.firebase.databaseURL]]"
+      app-name="[[env.firebase.appName]]"
+      auth-domain="[[env.firebase.authDomain]]"
+      storage-bucket="[[auth.firebase.storageBucket]]"
+      google-client-id="[[env.google.clientId]]"
+      facebook-app-id="[[env.facebook.appId]]"
+      enable-google
+      enable-facebook
+      on-error="handleError"
+      on-user-changed="handleUserChanged"
+    ></firebase-ui>
+    <paper-menu-button id="account-menu" horizontal-align="right">
+      <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
+      <paper-menu class="dropdown-content">
+        <template is="dom-if" if="[[!user]]">
+          <paper-item on-click="signIn">Sign In</paper-item>
+          <paper-item on-click="register">Register Email</paper-item>
+          <paper-item on-click="resetPassword">Reset Password</paper-item>
+        </template>
+        <template is="dom-if" if="[[user]]">
+          <paper-item on-click="changePassword">Change Password</paper-item>
+          <paper-item on-click="signOut">Sign Out</paper-item>  
+        </template>
+      </paper-menu>
+    </paper-menu-button>
+    <paper-toast id="authControllerToast"></paper-toast>
+  </template>
+  <script>
+    Polymer({
+      is: 'auth-controller',
+      
+      properties: {
+        env: Object,
+        user: {
+          type: Object,
+          notify: true
+        }
+      },
+      
+      handleError: function(err) {
+        this.popToast(err.detail.toString());
+        console.log('auth-controller error', err.detail);
+        if (err.detail.code === 'auth/general-error') {
+          console.warn('Make sure that Identity Toolkit API is enabled.');
+        }
+      },
+      
+      popToast: function(text) {
+        var toast = this.$.authControllerToast;
+        toast.text = text;
+        toast.show();
+      },
+      
+      handleUserChanged: function(e) {
+        var usersRef = firebase.app(env.firebase.appName).database().ref().child(env.firebase.nesting).child(env.model.users)
+        var user = e.detail.value;
+        usersRef.child(user.uid).update({
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL
+        })
+        .catch(function(err) {
+          console.log('handleUserChanged error', err);
+          this.popToast(err.toString());
+        }.bind(this));
+      },
+      
+      signIn: function() {
+        this.$.firebaseUI.openLogin();
+      },
+      
+      register: function() {
+        this.$.firebaseUI.openRegister();
+      },
+      
+      resetPassword: function() {
+        this.$.firebaseUI.openReset();
+      },
+      
+      changePassword: function() {
+        this.$.firebaseUI.openChangePassword();
+      },
+      
+      signOut: function() {
+        this.$.firebaseUI.signOut();
+      }
+    });
+  </script>
+</dom-module>

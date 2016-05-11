@@ -1,0 +1,26 @@
+isAuthed() = auth.uid != null;
+isUser() = auth.uid == $uid;
+
+path /imageViewer/environment/public {
+  read() = true;
+}
+
+path /imageViewer/$env/images {
+  read() = true;
+  write() = isAuthed();
+}
+
+path /imageViewer/$env/users/$uid {
+  read() = isUser();
+  write() = isUser();
+}
+
+path /imageViewer/$env/userOwned/$object/$uid {
+  read() = isUser();
+  write() = isUser();
+}
+
+path /imageViewer/$env/userReadable/$object/$uid {
+  read() = isUser();
+  write() = false;
+}

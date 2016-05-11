@@ -1,0 +1,42 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="landing-page">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment"></style>
+    <style>
+      :host {
+        display: block;
+      }
+      paper-material {
+        position: absolute;
+        top: 4rem;
+        bottom: 1rem;
+        width: calc(100vw - 3rem);
+      }
+      
+      .cta-wrapper {
+        width: 75vw;
+        max-width: 500px;
+        text-align: center;  
+      }
+    </style>
+    <paper-material elevation="1" class="layout vertical center center-justified">
+      <div class="cta-wrapper">
+        <h2>Quiver One Image Viewer</h2>
+        <p>You must be signed in to use this application.</p>
+        <paper-button raised class="primary" on-click="signIn">Sign In</paper-button>
+      </div>
+    </paper-material>
+  </template>
+  <script>
+    Polymer({
+      is: 'landing-page',
+      
+      signIn: function() {
+        document.querySelector('auth-controller').signIn();
+      }
+    });
+  </script>
+</dom-module>

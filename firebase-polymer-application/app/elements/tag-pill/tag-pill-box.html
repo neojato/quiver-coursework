@@ -1,0 +1,47 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../elements/tag-pill/tag-pill.html">
+<script src="../../bower_components/lodash/lodash.min.js"></script>
+<dom-module id="tag-pill-box">
+  <template>
+    <style>
+      :host {
+        display: inline-block;
+      }  
+    </style>
+    <template is="dom-repeat" items="[[tags]]" as="tag">
+      <tag-pill on-click="handleTagClick" clickable$="[[clickable]]">[[tag]]</tag-pill>
+    </template>
+  </template>
+  <script>
+    Polymer({
+      is: 'tag-pill-box',
+      
+      properties: {
+        image: Object,
+        clickable: {
+          type: Boolean,
+          value: false
+        },
+        tags: {
+          type: Array,
+          computed: '_getTags(image.*)'
+        }
+      },
+      
+      _getTags: function(changes) {
+        return _.filter(_.map(changes.value, function(value, key) {
+          var parts = key.split('-');
+          if (parts.shift() === 'tag') {
+            return parts.join('-');
+          }
+        }), function(tag) {
+          return !!tag;
+        });
+      },
+      
+      handleTagClick: function(e) {
+        this.fire('tag-click', e.target.textContent.trim());
+      }
+    });
+  </script>
+</dom-module>

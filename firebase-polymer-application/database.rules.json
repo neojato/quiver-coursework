@@ -1,0 +1,38 @@
+{
+  "rules": {
+    "imageViewer": {
+      "environment": {
+        "public": {
+          ".read": "true"
+        }
+      },
+      "$env": {
+        "images": {
+          ".read": "true",
+          ".write": "auth.uid != null"
+        },
+        "users": {
+          "$uid": {
+            ".read": "auth.uid == $uid",
+            ".write": "auth.uid == $uid"
+          }
+        },
+        "userOwned": {
+          "$object": {
+            "$uid": {
+              ".read": "auth.uid == $uid",
+              ".write": "auth.uid == $uid"
+            }
+          }
+        },
+        "userReadable": {
+          "$object": {
+            "$uid": {
+              ".read": "auth.uid == $uid"
+            }
+          }
+        }
+      }
+    }
+  }
+}

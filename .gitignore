@@ -31,3 +31,12 @@ node_modules
 
 # Optional REPL history
 .node_repl_history
+
+.DS_Store
+.firebaserc
+env.json
+quiver-one*.json
+
+dist
+node_modules
+bower_components

@@ -1,0 +1,77 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../../styles/app-theme.html">
+<dom-module id="tags-selector">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+      :host {
+        display: inline-block;
+      }
+      paper-checkbox {
+        padding: .5rem 1rem;
+        background: var(--light-primary-color);
+        border-radius: 20px;
+        margin: 1rem .25rem;
+      }
+    </style>
+    <paper-radio-group selected="{{filterType}}">
+      <paper-radio-button name="include">Include</paper-radio-button>
+      <paper-radio-button name="exclude">Excluded</paper-radio-button>
+    </paper-radio-group>
+    <template id="tagsTemplate" is="dom-repeat" items="[[tags]]" as="tag">
+      <paper-checkbox on-change="handleCheckboxChange" data-tag="[[tag]]">[[tag]]</paper-checkbox>
+    </template>
+  </template>
+  <script>
+    Polymer({
+      is: 'tags-selector',
+      
+      properties: {
+        tags: {
+          type: Array,
+          value: []
+        },
+        includedTags: {
+          type: Array,
+          value: [],
+          notify: true
+        },
+        excludedTags: {
+          type: Array,
+          value: [],
+          notify: true
+        },
+        filterType: {
+          type: String,
+          value: 'exclude',
+          notify: true
+        }
+      },
+      
+      observers: ['refresh(tags.splices)'],
+      
+      refresh: function() {
+        this.tags.forEach(function(tag) {
+          if (!~this.includedTags.indexOf(tag) && !~this.excludedTags.indexOf(tag)) {
+            this.push('excludedTags', tag);
+          }
+        }.bind(this));
+      },
+      
+      handleCheckboxChange: function(e) {
+        var checkbox = e.target;
+        var tag = checkbox.dataTag;
+        if (checkbox.checked) {
+          this.push('includedTags', tag);
+          this.splice('excludedTags', this.excludedTags.indexOf(tag), 1);
+        } else {
+          this.push('excludedTags', tag);
+          this.splice('includedTags', this.includedTags.indexOf(tag), 1);
+        }
+      }
+    });
+  </script>
+</dom-module>

@@ -1,0 +1,26 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<script>
+  if (!window.Quiver) {
+    window.Quiver = {};
+  }
+  window.Quiver.ActiveBehavior = {
+    properties: {
+      active: {
+        type: Boolean,
+        observer: '_handleActiveChanged'
+      }
+    },
+    
+    _handleActiveChanged: function(active) {
+      return active ? this.attach() : this.detach();
+    },
+    
+    attach: function() {
+      console.log('Quiver.ActiveBehavior must implement attach()');
+    },
+    
+    detach: function() {
+      console.log('Quiver.ActiveBehavior must implement detach()');
+    },
+  }; 
+</script>

@@ -1,0 +1,122 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-icons/hardware-icons.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../elements/tag-pill/tag-pill-box.html">
+<link rel="import" href="../../elements/active-behavior/active-behavior.html">
+<link rel="import" href="../../elements/gcloud-image/gcloud-image.html">
+<link rel="import" href="../../styles/shared-styles.html">
+<script src="../../bower_components/lodash/lodash.min.js"></script>
+<dom-module id="image-editor">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment"></style>
+    <style>
+      :host {
+        display: block;
+      }
+      
+      #back-button {
+        position: absolute;
+        top: 1rem;
+        left: 2rem;
+        color: var(--primary-text-color);
+      }
+      
+      #back-button:visited {
+        color: var(--primary-text-color);
+      }
+      
+      paper-material {
+        margin-top: 5rem;
+      }
+      
+      #tagInputWrapper {
+        width: 75vw; 
+        max-width: 50rem;
+        padding: 2rem;
+      }
+    </style>
+    <a id="back-button" href="/">
+      <paper-icon-button icon="hardware:keyboard-backspace"></paper-icon-button>
+    </a>
+    <paper-material elevation="1" class="layout vertical centered">
+      <h1 style="text-align: center">[[image.name]]</h1>
+      <div class="layout horizontal center-justified">
+        <img is="gcloud-image" image="[[image]]"/>
+      </div>
+      <div class="layout horizontal center-justified" style="min-height: 27px; margin-top: 1rem;">
+        <tag-pill-box image="[[image]]" clickable on-tag-click="handleTagClick"></tag-pill-box>
+      </div>
+      <form is="iron-form" on-submit="addTag" class="layout horizontal center-justified">
+        <div id="tagInputWrapper" class="layout horizontal">
+          <paper-input class="flex" type="text" value="{{newTag::input}}" placeholder="Add a tag..." autofocus></paper-input>
+          <paper-button>Submit</paper-button>  
+        </div>
+      </form>
+    </paper-material>
+  </template>
+  <script>
+    Polymer({
+      is: 'image-editor',
+      
+      behaviors: [Quiver.ActiveBehavior],
+      
+      properties: {
+        ref: Object,
+        env: Object,
+        imageRef: Object,
+        imageKey: String,
+        image: Object
+      },
+      
+      observers: ['_loadImage(ref, imageKey)'],
+      
+      attach: function() {
+        
+      },
+      
+      detach: function() {
+        if (this.imageRef) {
+          this.imageRef.off('value', this.__handleImageRefValue);
+        }
+      },
+      
+      _loadImage: function(ref, imageKey) {
+        if (ref && imageKey) {
+          this.set('imageRef', this.ref.child(env.model.images).child(imageKey));
+          this.__handleImageRefValue = this._handleImageRefValue.bind(this);
+          this.imageRef.on('value', this.__handleImageRefValue);
+        }
+      },
+      
+      _handleImageRefValue: function(snap) {
+        var image = snap.val();
+        if (image) {
+          this.set('image', image);
+          this.notifyPath('image.name', image.name);  
+        }
+      },
+      
+      addTag: function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.newTag) {
+          var cleanTag = this.newTag.toLowerCase().replace(/\s/g, '-');
+          var payload = {};
+          payload['tag-' + cleanTag] = true;
+          this.imageRef.update(payload);
+          this.set('newTag', '');
+        }
+      },
+      
+      handleTagClick: function(e) {
+        var payload = {};
+        payload['tag-' + e.detail] = null;
+        this.imageRef.update(payload);
+      }
+    });
+  </script>
+</dom-module>

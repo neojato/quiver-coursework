@@ -1,0 +1,317 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/paper-ripple/paper-ripple.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../../elements/tag-pill/tag-pill-box.html">
+<link rel="import" href="../../elements/active-behavior/active-behavior.html">
+<link rel="import" href="../../elements/gcloud-image/gcloud-image.html">
+<link rel="import" href="../../styles/shared-styles.html">
+
+<script src="../../bower_components/fuse.js/src/fuse.min.js"></script>
+<script src="../../bower_components/lodash/lodash.min.js"></script>
+
+<dom-module id="images-list">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment"></style>
+    <style>
+      :host {
+        display: block;
+      }
+      
+      #list paper-material {
+        max-width: 20vw;
+        height: 10vw;
+        min-width: 300px;
+        min-height: 150px;
+        cursor: pointer;
+        margin: 1rem;
+      }
+      
+      paper-material div {
+        height: 100%;
+      }
+      
+      paper-material img {
+        max-width: 100%;
+        max-height: 100%;
+      }
+      
+      paper-material .title {
+        position: absolute;
+        bottom: 0rem;
+        left: 0rem;
+        right: 0rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        background: rgba(255, 255, 255, .85);
+        color: black;
+        text-align: center;
+        z-index: 1;
+        padding: .5rem;
+        display: inline-block;
+        height: 1.3rem;
+        font-weight: 300;
+      }
+      
+      paper-material .link {
+        position: fixed;
+        top: -1000rem;
+        left: -1000rem;
+      }
+      
+      .edit-button {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        color: var(--primary-text-color);
+      }
+      
+      tag-pill-box {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        right: 3rem;
+      }
+    </style>
+    <div id="list" class="layout horizontal wrap">
+      <template id="imagesTemplate" is="dom-repeat" items="[[filteredImages]]" as="image" filter="_filterByTag">
+        <paper-material elevation$="{{getElevation(index, selectedIndex)}}" class="layout vertical center-justified center" filename="[[image.name]]">
+          <tag-pill-box image="[[image]]"></tag-pill-box>
+          <img is="gcloud-image" image="[[image]]"/>
+          <div class="title">
+            [[image.name]]
+          </div>
+          <textarea class="link">![[[image.name]]](https://console.cloud.google.com/m/cloudstorage/b/[[image.bucket]]/o/[[image.name]])</textarea>
+          <paper-ripple></paper-ripple>
+          <a class="edit-button" href="/app/image/[[image.cleanMd5Hash]]">
+            <paper-icon-button icon="editor:mode-edit"></paper-icon-button>
+          </a>
+        </paper-material>
+      </template>
+  </div>
+  <paper-toast id="toast"></paper-toast>
+  </template>
+  <script>
+    Polymer({
+      is: 'images-list',
+      
+      behaviors: [Quiver.ActiveBehavior],
+      
+      properties: {
+        ref: Object,
+        env: Object,
+        imagesRef: Object,
+        images: {
+          type: Array,
+          value: []
+        },
+        filterText: String,
+        includedTags: {
+          type: Array,
+          value: []
+        },
+        excludedTags: {
+          type: Array,
+          value: []
+        },
+        filterType: {
+          type: String
+        },
+        filteredImages: {
+          type: Array,
+          computed: '_filterImages(filterText, images.splices)'
+        },
+        tags: {
+          type: Array,
+          computed: '_getTags(images.splices)',
+          notify: true
+        },
+        fuse: {
+          type: Object,
+          computed: '_getFuse(images.splices)'
+        },
+        fuseOptions: {
+          type: Object,
+          value: {
+            keys: ['name']
+          }
+        },
+        selectedIndex: {
+          type: Number,
+          value: -1
+        }
+      },
+      
+      observers: ['_render(images.splices, includedTags.splices, excludedTags.splices, filterType)'],
+      
+      _render: function() {
+        this.debounce('render', function() {
+          this.$.imagesTemplate.render();
+        }.bind(this), 100);
+      },
+      
+      attach: function() { 
+        this.splice('images', 0, this.images.length); // Clear out images array
+        Polymer.dom.flush();
+        this.set('imagesRef', ref.child(env.model.images).orderByKey().limitToLast(this.env.preferences.imagesListLimit));
+        
+        this.__pushImages = this._pushImages.bind(this);
+        this.__handleClick = this._handleClick.bind(this);
+        this.__handleKeyup = this._handleKeyup.bind(this);
+        
+        this.imagesRef.on('child_added', this.__pushImages);
+        this.$.list.addEventListener('click', this.__handleClick);
+        window.addEventListener('keyup', this.__handleKeyup);
+      },
+      
+      detach: function() {
+        if (this.imagesRef) {
+          this.imagesRef.off('child_added', this.__pushImages);  
+        }
+        this.$.list.removeEventListener('click', this.__handleClick);
+        window.removeEventListener('keyup', this.__handleKeyup);
+      },
+      
+      _pushImages: function(snap) {
+        this.push('images', snap.val());
+      },
+      
+      _handleClick: function(e) {
+        var imagesList = this;
+        var getPaperMaterial = function(el) {
+          if (el.nodeName === 'PAPER-MATERIAL') {
+            return el;
+          } else {
+            return el.parentElement ? getPaperMaterial(el.parentElement) : undefined;
+          }
+        };
+        var paperMaterial = getPaperMaterial(e.target);
+          if (paperMaterial) {
+            var link = paperMaterial.querySelector('.link');
+            // var range = document.createRange();
+            // range.selectNode(link);
+            // window.getSelection().addRange(range);
+            link.select();
+            try {
+              if (!document.execCommand('copy')) {
+                imagesList.message('Copy failed 🙁');
+              } else {
+                imagesList.message('Copied to clipboard: ' + paperMaterial.filename);
+              }
+            } catch (err) {
+              console.log('copy error', err);
+            }
+          }
+      },
+      
+      _handleKeyup: function(e) {
+        switch (e.code) {
+          case 'Tab':
+            this.incrementSelectedIndex();
+            break;
+          case 'Enter':
+            this.clickSelected();
+            break;
+        }
+      },
+      
+      message: function(text) {
+        this.$.toast.text = text;
+        this.$.toast.show();
+      },
+      
+      _getFuse: function(splices) {
+        return new Fuse(this.images, this.fuseOptions);
+      },
+      
+      _filterImages: function(filterText) {
+        if (filterText) {
+          return this.fuse.search(filterText);  
+        } else {
+          return _.sortBy(this.images, 'name');
+        }
+      },
+      
+      incrementSelectedIndex: function() {
+        this.set('selectedIndex', this.selectedIndex + 1);
+      },
+      
+      resetSelectedIndex: function() {
+        this.set('selectedIndex', -1);
+      },
+      
+      getElevation: function(index, selectedIndex) {
+        return index === selectedIndex ? "2" : "1";
+      },
+      
+      clickSelected: function() {
+        imagesList.querySelector('paper-material[elevation="2"]').click();
+      },
+      
+      getImageTags: function(image) {
+        var keys = Object.keys(image);
+        var i = keys.length;
+        var tags = [];
+        var parts;
+        var tag;
+        
+        while (i--) {
+          parts = keys[i].split('-');
+          if (parts.shift() === 'tag') {
+            tags.push(parts.join('-'));
+          }
+        }
+        
+        return tags;
+      },
+      
+      _getTags: function() {
+        var getImageTags = this.getImageTags;
+        return _.reduce(this.images, function(tags, image) {
+          var imageTags = getImageTags(image);
+          var i = imageTags.length;
+          
+          while (i--) {
+            if (!~tags.indexOf(imageTags[i])) {
+              tags.push(imageTags[i]);
+            }
+          }
+          
+          return tags;
+        }, []);
+      },
+      
+      _filterByTag: function(image) {
+        var imageTags = this.getImageTags(image);
+        var i = imageTags.length;
+        
+        if (this.filterType === 'include') {
+          if (!i) {
+            return false;
+          }
+          while (i--) {
+            if (~this.includedTags.indexOf(imageTags[i])) {
+              return true;
+            }
+          } 
+          return false;
+        } else {
+          if (!i) {
+            return true;
+          }
+          while (i--) {
+            if (~this.includedTags.indexOf(imageTags[i])) {
+              return false;
+            }
+          }
+          return true;
+        }
+      }
+    });
+  </script>
+</dom-module>

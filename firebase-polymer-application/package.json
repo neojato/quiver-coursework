@@ -1,0 +1,30 @@
+{
+  "name": "firebase-polymer-image-viewer",
+  "version": "1.0.0",
+  "description": "An image library built on Firebase and Polymer",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "firebase",
+    "polymer",
+    "quiver"
+  ],
+  "author": "Chris Esplin <chris@quiver.is>",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "browser-sync": "^2.12.5",
+    "gulp": "^3.9.1",
+    "gulp-minify-inline": "^0.2.1",
+    "gulp-vulcanize": "^6.1.0",
+    "superstatic": "^4.0.2"
+  },
+  "dependencies": {
+    "axios": "^0.11.0",
+    "firebase": "^2.4.2",
+    "gcloud": "^0.32.0",
+    "l": "0.0.1",
+    "lodash": "^4.11.2"
+  }
+}

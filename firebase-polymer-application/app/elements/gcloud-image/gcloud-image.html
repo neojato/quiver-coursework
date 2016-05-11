@@ -1,0 +1,29 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<dom-module id="gcloud-image">
+  <template>
+    <style>
+      :host {
+        display: inline-block;
+      }
+    </style>
+  </template>
+  <script>
+    Polymer({
+      is: 'gcloud-image',
+      
+      extends: 'img',
+      
+      properties: {
+        image: {
+          type: Object,
+          observer: '_observeImage'
+        }
+      },
+      
+      _observeImage: function(image) {
+        this.alt = image.name;
+        this.src = "https://console.cloud.google.com/m/cloudstorage/b/quiver-one-assets/o/" + image.name;
+      }
+    });
+  </script>
+</dom-module>

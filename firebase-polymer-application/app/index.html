@@ -1,0 +1,94 @@
+<html>
+
+<head>
+  <title>Firebase/Polymer Image Viewer</title>
+  <style>
+    body {
+      background: #fafafa;
+      font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333;
+    }
+  </style>
+  <script src="/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link rel="import" href="/elements/elements.html">
+  <style is="custom-style" include="shared-styles iron-flex iron-flex-alignment"></style>
+  <script src="/bower_components/lodash/lodash.min.js"></script>
+  <script type="text/javascript">
+    function __loadFirebaseEnv(data) {
+      window.rawEnvData = data;
+      console.log('here', data);
+      window.env = _.merge(data.default, data[location.hostname.split('.').join(':')]);
+    }
+  </script>
+  <script src="https://quiver-one.firebaseio.com/imageViewer/environment/public.json?callback=__loadFirebaseEnv"></script>
+</head>
+
+<body>
+  <template is="dom-bind" id="app">
+    <auth-controller id="authController" env="[[env]]" user="{{user}}"></auth-controller>
+    <carbon-location route="{{route}}"></carbon-location>
+    <carbon-route route="{{route}}" pattern="/" data="{{routeData}}" active="{{appActive}}"></carbon-route>
+    <carbon-route route="{{route}}" pattern="/app/:page/:id" data="{{routeData}}" active="{{appActive}}"></carbon-route>
+    <iron-pages id="pages" attr-for-selected="data-page" selected="[[getRoute(routeData, user)]]">
+      <section data-page="landing">
+        <landing-page></landing-page>
+      </section>
+      <section data-page="images">
+        <div class="layout vertical center-justified center" style="padding: 1rem;">
+          <images-filter id="imagesFilter" filter-text="{{filterText}}" style="width: 75vw; max-width: 50rem;" on-focused="handleFilterFocused" active="[[isActive('images', routeData.*, user)]]"></images-filter>
+          <tags-selector id="tagsSelector" tags="[[tags]]" included-tags="{{includedTags}}" excluded-tags="{{excludedTags}}" filter-type="{{filterType}}"></tag-selector>
+        </div>
+        <scroll-controller>
+          <images-list id="imagesList" ref="[[ref]]" env="[[env]]" filter-text="[[filterText]]" tags="{{tags}}" included-tags="[[includedTags]]" excluded-tags="[[excludedTags]]" filter-type="[[filterType]]" active="[[isActive('images', routeData.*, user)]]"></images-list>
+        </scroll-controller>    
+      </section>
+      <section data-page="image">
+        <image-editor id="imageEditor" ref="[[ref]]" env="[[env]]" image-key="[[routeData.id]]" active="[[isActive('image', routeData.*, user)]]"></image-editor>
+      </section>
+    </iron-pages>
+  </template>
+
+
+  <script src="https://www.gstatic.com/firebasejs/3.0.0-eap.5/firebase.js"></script>
+  <script>
+    var appName = window.env.firebase.appName;
+    firebase.initializeApp(window.env.firebase, appName);
+    var ref = firebase.app(appName).database().ref().child(window.env.firebase.nesting);
+    var app = document.querySelector('#app');
+    app.ref = ref;
+    app.env = window.env;
+    app.handleFilterFocused = function() {
+      document.querySelector('#imagesList').resetSelectedIndex();
+    };
+    
+    app.checkRoute = function() {
+      setTimeout(function() {
+        if (!app.appActive) {
+          history.pushState({}, '', '/');
+        }
+      });      
+    };
+    window.addEventListener('location-changed', app.checkRoute); //iron-location throws location-changed and swallows window.onpopstate
+    app.checkRoute(); // Check on initial load
+    
+    app.isActive = function(page) {
+      return page ? page === app.getRoute(app.routeData, app.user) : false;
+    };
+    
+    app.getRoute = function(routeData, user) {
+      if (!user) {
+        return 'landing';
+      } else if (!routeData.page) {
+        return 'images';
+      } else {
+        return routeData.page;
+      }
+    }
+    
+    app.tags = [];
+    app.includedTags = [];
+    app.excludedTags = [];
+  </script>
+</body>
+
+</html>
