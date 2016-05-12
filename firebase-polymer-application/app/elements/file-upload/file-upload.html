@@ -1,0 +1,195 @@
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../styles/shared-styles.html">
+<script src="../../bower_components/lodash/dist/lodash.min.js"></script>
+<dom-module id="file-upload">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment"></style>
+    <style>
+      paper-item-body {
+        width: 100%;
+      }
+    </style>
+    <paper-dialog id="uploadDialog" modal>
+      <div class="layout vertical centered center-justified" style="width: 300px;">
+         <div class="layout horizontal start-justified">
+          <label for="upload-input" style="margin-bottom: 1rem;">
+            <paper-button raised class="primary" on-click="reset">Choose File(s)</paper-button>
+          </label>
+          <input id="upload-input" type="file" style="display: none;" multiple files="{{filesList::change}}">  
+         </div>
+         <template id="filesList" is="dom-repeat" items="[[flatFiles]]" as="file">
+          <paper-item disabled$="[[file.disabled]]">
+            <paper-tooltip>
+              Upload Status: [[file.state]]
+            </paper-tooltip>
+            <paper-item-body two-line>
+              <div class="layout horizontal justified">
+                <span>[[file.name]]</span>
+                <paper-icon-button class$="[[file.state]]" icon="file-upload" index="[[index]]" on-click="uploadFile" disabled$="[[file.disabled]]"></paper-icon-button>
+              </div>
+              <div secondary>
+                <paper-progress value="[[file.progress]]"></paper-progress>
+              </div>
+            </paper-item-body>
+          </paper-item>  
+         </template>
+         <template is="dom-if" if="[[enableUploadAll]]">
+           <div class="layout horizontal start-justified">
+             <paper-button raised class="primary" on-click="uploadAll" style="margin-top: 1rem;">Upload All</paper-button>
+           </div>
+         </template>
+      </div>
+      <footer class="layout horizontal end-justified">
+        <paper-button dialog-dismiss>close</paper-button>
+      </footer>
+    </paper-dialog>
+    <paper-toast id="fileUploadToast"></paper-toast>
+  </template>
+  <script>
+    Polymer({
+       is: "file-upload",
+       
+       properties: {
+         env: Object,
+         ref: Object,
+         firebase: Object,
+         user: Object,
+         filesList: Object,
+         files: {
+           type: Array,
+           computed: '_getFiles(filesList.*)',
+           notify: true
+         },
+         flatFiles: {
+           type: Array,
+           computed: '_getFlatFiles(files.splices)'
+         },
+         enableUploadAll: {
+           type: Boolean,
+           computed: '_getEnableUploadAll(flatFiles.splices)'
+         },
+         storage: {
+           type: Object,
+           computed: '_getStorage(firebase, env)'
+         }
+       },
+       
+       observers: ['_fireResize(filesList.*)'],
+       
+       attached: function() {
+         this.open();
+       },
+       
+       _fireResize: function() {
+         this.$.uploadDialog.fire('iron-resize');
+       },
+       
+       _getFiles: function(change) {
+         return _.toArray(change.value);
+       },
+       
+       _getFlatFiles: function() {
+         return _.map(this.files, function(file) {
+           return {
+             name: file.name,
+             size: file.size,
+             type: file.type,
+             progress: file.progress,
+             state: file.state || 'ready',
+             disabled: file.disabled
+           };
+         });
+       },
+       
+       _getStorage: function(firebase, env) {
+         if (firebase && env) {
+          return firebase.app(env.firebase.appName).storage();  
+         }
+       },
+       
+       _getEnableUploadAll: function() {
+         return !!_.find(this.flatFiles, function(file) {
+           return !file.disabled;
+         });
+       },
+       
+       reset: function() {
+         this.set('filesList', undefined);
+       },
+       
+       open: function() {
+         this.$.uploadDialog.open();
+       },
+       
+       message: function(text) {
+         var toast = this.$.fileUploadToast;
+         toast.text = text;
+         toast.show();
+       },
+       
+       updateFile: function(index, file) {
+         this.splice('files', index, 1, file);
+       },
+       
+       uploadFile: function(e) {
+         var fileUpload = this;
+         var index = e.target ? e.target.parentElement.index : e;
+         var file = this.files[index];
+         if (file.state || file.disabled) {
+           return console.log('File cannot be uploaded in this state:', file);
+         } else {
+          var path = env.model.files + file.name;
+          var task = this.storage.ref().child(path).put(file, {
+            cacheControl: 'max-age=' + 60 * 60 * 24 * 30 //one month in seconds 
+          });
+
+          task.on('state_changed', function(snap) {
+            file.state = snap.state;
+            file.disabled = true;
+            file.progress = snap.bytesTransferred ? 100 * snap.bytesTransferred / file.size : 0;
+            fileUpload.updateFile(index, file);
+          }, function(err) {
+            file.state = 'error';
+            file.disabled = false;
+            fileUpload.updateFile(index, file);
+            fileUpload.renderFiles();
+            fileUpload.message(file.name + ': ' + err.toString());
+          }, function() {
+            file.progress = 100;
+            file.disabled = true;
+            fileUpload.updateFile(index, file);
+            
+            fileUpload.ref.child(fileUpload.env.model.queues.files + fileUpload.user.uid).push({
+              path: path,
+              url: task.snapshot.downloadURL
+            }).then(function() {
+              fileUpload.message(file.name + ': upload success! 😊');
+            })
+            .catch(function(err) {
+              file.state = false;
+              file.disabled = false;
+              fileUpload.updateFile(index, file);
+              fileUpload.message(err.toString());
+            });
+          }); 
+         }
+       },
+       
+       uploadAll: function() {
+         var i = this.files.length;
+         while (i--) {
+           this.uploadFile(i);
+         }
+       }
+       
+    });
+  </script>
+</dom-module>

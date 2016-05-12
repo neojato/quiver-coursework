@@ -24,3 +24,8 @@ path /imageViewer/$env/userReadable/$object/$uid {
   read() = isUser();
   write() = false;
 }
+
+path /imageViewer/$env/queues/$object/$uid {
+  read() = isUser();
+  write() = isUser();
+}

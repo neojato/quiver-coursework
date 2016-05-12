@@ -79,15 +79,17 @@
       handleUserChanged: function(e) {
         var usersRef = firebase.app(env.firebase.appName).database().ref().child(env.firebase.nesting).child(env.model.users)
         var user = e.detail.value;
-        usersRef.child(user.uid).update({
-          displayName: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL
-        })
-        .catch(function(err) {
-          console.log('handleUserChanged error', err);
-          this.popToast(err.toString());
-        }.bind(this));
+        if (user) {
+          usersRef.child(user.uid).update({
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL
+          })
+          .catch(function(err) {
+            console.log('handleUserChanged error', err);
+            this.popToast(err.toString());
+          }.bind(this)); 
+        }
       },
       
       signIn: function() {

@@ -17,12 +17,12 @@
         margin: 1rem .25rem;
       }
     </style>
-    <paper-radio-group selected="{{filterType}}">
-      <paper-radio-button name="include">Include</paper-radio-button>
-      <paper-radio-button name="exclude">Excluded</paper-radio-button>
+    <paper-radio-group selected="{{filterType}}" tabindex="1000000">
+      <paper-radio-button name="include" tabindex="1000000">Include</paper-radio-button>
+      <paper-radio-button name="exclude" tabindex="1000000">Excluded</paper-radio-button>
     </paper-radio-group>
     <template id="tagsTemplate" is="dom-repeat" items="[[tags]]" as="tag">
-      <paper-checkbox on-change="handleCheckboxChange" data-tag="[[tag]]">[[tag]]</paper-checkbox>
+      <paper-checkbox on-change="handleCheckboxChange" data-tag="[[tag]]" tabindex="1000000">[[tag]]</paper-checkbox>
     </template>
   </template>
   <script>

@@ -38,22 +38,26 @@
           <tags-selector id="tagsSelector" tags="[[tags]]" included-tags="{{includedTags}}" excluded-tags="{{excludedTags}}" filter-type="{{filterType}}"></tag-selector>
         </div>
         <scroll-controller id="scrollController" active="[[isActive('images', routeData.*, user)]]" on-scrolled-top="handleScrolledTop" on-scrolled-bottom="handleScrolledBottom">
-          <images-list id="imagesList" ref="[[ref]]" env="[[env]]" filter-text="[[filterText]]" tags="{{tags}}" included-tags="[[includedTags]]" excluded-tags="[[excludedTags]]" filter-type="[[filterType]]" active="[[isActive('images', routeData.*, user)]]" on-tags-changed="handleListResize"></images-list>
+          <images-list id="imagesList" ref="[[ref]]" env="[[env]]" filter-text="[[filterText]]" tags="{{tags}}" included-tags="[[includedTags]]" excluded-tags="[[excludedTags]]" filter-type="[[filterType]]" active="[[isActive('images', routeData.*, user)]]" on-tags-changed="handleListResize" on-reset="scrollToTop"></images-list>
         </scroll-controller>    
       </section>
       <section data-page="image">
         <image-editor id="imageEditor" ref="[[ref]]" env="[[env]]" image-key="[[routeData.id]]" active="[[isActive('image', routeData.*, user)]]"></image-editor>
       </section>
     </iron-pages>
+    <template is="dom-if" if="[[user]]">
+      <paper-fab icon="add" on-click="openFileUpload" style="position: absolute; bottom: 4rem; right: 4rem;"></paper-fab>  
+    </template>
+    <file-upload id="fileUpload" ref="[[ref]]" user="[[user]]" firebase="[[firebase]]" env="[[env]]"></file-upload>
   </template>
 
-
-  <script src="https://www.gstatic.com/firebasejs/3.0.0-eap.5/firebase.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
   <script>
     var appName = window.env.firebase.appName;
     firebase.initializeApp(window.env.firebase, appName);
     var ref = firebase.app(appName).database().ref().child(window.env.firebase.nesting);
     var app = document.querySelector('#app');
+    app.firebase = firebase;
     app.ref = ref;
     app.env = window.env;
     app.handleFilterFocused = function() {
@@ -97,7 +101,14 @@
     
     app.handleListResize = function() {
       app.$.scrollController.setTop();
-    }
+    };
+    app.scrollToTop = function() {
+      app.$.scrollController.scrollToTop();
+    };
+    
+    app.openFileUpload = function() {
+      app.$.fileUpload.open();
+    };
   </script>
 </body>
 

@@ -44,6 +44,10 @@
         var siblings = this.parentElement.children;
         var previousSibling = siblings[0];
         this.style.top = previousSibling.scrollHeight + 16;
+      },
+      
+      scrollToTop: function() {
+        this.scrollTop = 0;
       }
     });
   </script>

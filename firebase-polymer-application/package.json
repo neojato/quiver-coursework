@@ -16,13 +16,16 @@
   "devDependencies": {
     "browser-sync": "^2.12.5",
     "gulp": "^3.9.1",
+    "gulp-exec": "^2.1.2",
     "gulp-minify-inline": "^0.2.1",
     "gulp-vulcanize": "^6.1.0",
+    "merge-stream": "^1.0.0",
     "superstatic": "^4.0.2"
   },
   "dependencies": {
     "axios": "^0.11.0",
     "firebase": "^2.4.2",
+    "firebase-functions": "https://storage.googleapis.com/firebase-preview-drop/node/firebase-functions/firebase-functions-0.1.0-alpha.h.1.tar.gz",
     "gcloud": "^0.32.0",
     "l": "0.0.1",
     "lodash": "^4.11.2"

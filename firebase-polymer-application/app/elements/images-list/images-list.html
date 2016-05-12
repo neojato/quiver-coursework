@@ -89,7 +89,7 @@
     </style>
     <div id="list" class="layout horizontal wrap">
       <template id="imagesTemplate" is="dom-repeat" items="[[filteredImages]]" as="image" filter="_filterByTag">
-        <paper-material elevation$="{{getElevation(index, selectedIndex)}}" class="layout vertical center-justified center" filename="[[image.name]]" number$="[[image.number]]">
+        <paper-material elevation$="{{getElevation(index, selectedIndex)}}" class="layout vertical center-justified center" filename="[[image.name]]" number$="[[image.number]]" tabindex="1">
           <tag-pill-box image="[[image]]"></tag-pill-box>
           <img is="gcloud-image" image="[[image]]"/>
           <div class="title">
@@ -100,8 +100,8 @@
           </div>
           <textarea class="link">![[[image.name]]](https://console.cloud.google.com/m/cloudstorage/b/[[image.bucket]]/o/[[image.name]])</textarea>
           <paper-ripple></paper-ripple>
-          <a class="edit-button" href="/app/image/[[image.cleanMd5Hash]]">
-            <paper-icon-button icon="editor:mode-edit"></paper-icon-button>
+          <a class="edit-button" href="/app/image/[[image.cleanMd5Hash]]" tabindex="1000000">
+            <paper-icon-button icon="editor:mode-edit" tabindex="1000000"></paper-icon-button>
           </a>
         </paper-material>
       </template>
@@ -163,15 +163,15 @@
         },
         spliceEnd: {
           type: Number,
-          value: 30
+          value: 36
         },
         pageSize: {
           type: Number,
-          value: 30
+          value: 36
         },
         pageIncrement: {
           type: Number,
-          value: 20
+          value: 12
         },
         pageCursor: Number
       },
@@ -331,6 +331,7 @@
       
       _resetPageCursor: function() {
         this.set('pageCursor', 0);
+        this.fire('reset');
       },
       
       _filterByTag: function(image) {
