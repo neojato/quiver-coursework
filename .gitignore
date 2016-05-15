@@ -34,8 +34,10 @@ node_modules
 
 .DS_Store
 .firebaserc
+.vscode
 env.json
-quiver-one*.json
+*.tgz
+service-account.json
 
 dist
 node_modules
