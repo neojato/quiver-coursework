@@ -5,7 +5,9 @@ Firebase has a built in console that you can use to edit your data.
 
 See the video below for a walkthrough. Make sure to install the [Vimeo repeat & speed](https://chrome.google.com/webstore/detail/vimeo-repeat-speed/noonakfaafcdaagngpjehilgegefdima/related?hl=en) Chrome extension to speed up this and future videos. It makes a huge difference!
 
-![https://s3.amazonaws.com/assets.quiver.is/cms/admin/firebase-introduction/node-client/console-video-thumbnail.jpg](https://vimeo.com/album/3948258/video/166421069)
+***Realtime Database Viewer***
+
+[![https://s3.amazonaws.com/assets.quiver.is/cms/admin/firebase-introduction/node-client/console-video-thumbnail.jpg](https://s3.amazonaws.com/assets.quiver.is/cms/admin/firebase-introduction/node-client/console-video-thumbnail.jpg)](https://vimeo.com/album/3948258/video/166421069)
 
 ## Manage your Firebase from Node.js
 The Firebase Node.js client requires a Google Cloud API key and the ```firebase``` Node library. Follow the steps below for success!
@@ -46,6 +48,10 @@ ref.once('value')
     console.log('snap.val()', snap.val());
   });
 ```
+
+***Accessing Data From Node.js***
+
+[![Node.js Video](https://s3.amazonaws.com/assets.quiver.is/cms/admin/firebase-introduction/node-client/nodejs-video-thumbnail.png)](https://vimeo.com/166806793)
 
 ## Add data to your Firebase
 There are three ```firebase``` functions that will add or modify your data, ```ref.push()```, ```ref.set()``` and ```ref.update()```.
@@ -153,3 +159,7 @@ usersRef.update({
 Firebase calls these kinds of updates ***multi-location updates***. A use case might be a to update a user's username in three different locations at the same time, or maybe to process a financial transaction and log it simultaneously. 
 
 Multi-location updates either succeed or fail as a batch operation. ```ref.update``` returns a promise, so any errors on the write operation can be handled with a single ```.catch```.
+
+***Accessing Data From Node.js***
+
+[![Node.js Video](https://s3.amazonaws.com/assets.quiver.is/cms/admin/firebase-introduction/node-client/saving-data-video-thumbnail.png)](https://vimeo.com/570992128)
