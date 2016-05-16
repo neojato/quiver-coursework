@@ -1,0 +1,15 @@
+{
+  "name": "node-client-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "file:firebase-3.0.0.tgz",
+    "rsvp": "^3.2.1"
+  }
+}

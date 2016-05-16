@@ -26,7 +26,7 @@ This class will be a series of node.js scripts to demonstrate the API and simple
 - Storage
 - Hosting
 
-## Saving Data
+## Node Client
 - Add data by hand
 - Add data from a node.js file
 
