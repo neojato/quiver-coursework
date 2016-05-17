@@ -1,3 +1,4 @@
+//load-swapi-data.js
 var axios = require('axios');
 var getSwapiPerson = function (i) {
   return axios.get('http://swapi.co/api/people/' + i + '?format=json')
