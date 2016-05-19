@@ -163,25 +163,39 @@ You've got two options for limits:
 
 Let's refer back to the fruit "array" we used earlier and run through a few scenarios.
 
-- ```fruitRef.orderByKey().limitToLast(3)```: returns keys 8, 9, 10
-- ```fruitRef.orderByKey().limitToFirst(3)```: returns keys 1, 2, 3
-- ```fruitRef.orderByKey().limitToLast(3).startAt("5")```: returns keys 5, 6, 7 ***order matters***
-- ```fruitRef.orderByKey().startAt("5").limitToLast(3)```: returns keys 8, 9, 10 ***order matters***
-- ```fruitRef.orderByKey().startAt("5").limitToLast(10)```: returns keys 5, 6, 7, 8, 9, 10 ***bookend***
-- ```fruitRef.orderByKey().limitToFirst(3).startAt("5")```: returns keys 5, 6, 7
-- ```fruitRef.orderByKey().startAt("5").limitToFirst(3)```: returns keys 5, 6, 7
-- ```fruitRef.orderByKey().limitToLast(3).endAt("5")```: returns keys 3, 4, 5
-- ```fruitRef.orderByKey().endAt("5").limitToLast(3)```: returns keys 3, 4, 5
-- ```fruitRef.orderByKey().limitToFirst(3).endAt("5")```: returns keys 3, 4, 5 ***order matters***
-- ```fruitRef.orderByKey().endAt("5").limitToFirst(3)```: returns keys 1, 2, 3 ***order matters***
-- ```fruitRef.orderByKey().endAt("5").limitToFirst(10)```: returns keys 1, 2, 3, 4, 5 ***booken***
+1. ```fruitRef.orderByKey().limitToLast(3)```: returns keys 8, 9, 10
+2. ```fruitRef.orderByKey().limitToFirst(3)```: returns keys 1, 2, 3
+3. ```fruitRef.orderByKey().limitToLast(3).startAt("5")```: returns keys 5, 6, 7 ***parameter order matters***
+4. ```fruitRef.orderByKey().startAt("5").limitToLast(3)```: returns keys 8, 9, 10 ***parameter order matters***
+5. ```fruitRef.orderByKey().startAt("5").limitToLast(10)```: returns keys 5, 6, 7, 8, 9, 10 ***bookend***
+6. ```fruitRef.orderByKey().limitToFirst(3).startAt("5")```: returns keys 5, 6, 7
+7. ```fruitRef.orderByKey().startAt("5").limitToFirst(3)```: returns keys 5, 6, 7
+8. ```fruitRef.orderByKey().limitToLast(3).endAt("5")```: returns keys 3, 4, 5
+9. ```fruitRef.orderByKey().endAt("5").limitToLast(3)```: returns keys 3, 4, 5
+10. ```fruitRef.orderByKey().limitToFirst(3).endAt("5")```: returns keys 3, 4, 5 ***parameter order matters***
+11. ```fruitRef.orderByKey().endAt("5").limitToFirst(3)```: returns keys 1, 2, 3 ***parameter order matters***
+12. ```fruitRef.orderByKey().endAt("5").limitToFirst(10)```: returns keys 1, 2, 3, 4, 5 ***bookend***
 
-Notice that using a ```startAt``` with a ```limitToLast``` or an ```endAt``` with a ```limitToFirst``` is kind of pointless unless you're looking to "bookend" the result set.
+Read through these scenarios a couple of times and let's reflect on how insane this is. 
 
-We're ordering by key here, but ordering by child, value or priority works the same. Firebase will first try to sort the keys/children/priorities/values numerically, and then it will sort them as strings... so if you have a mix of number and strings, the numbers will sort to the top and the strings toward the bottom.
+Scenarios 1 and 2 are expected. Firebase is reading from the bottom or the top of the list, and limiting the results.
+
+Scenarios 3, 4, and 5 are crazy town! 
+- Scenario 3 calls ```limitToLast``` _first_ and the ```startAt``` statement _second_, so it starts at "5" and reads 3 records toward the bottom
+- Scenario 4 calls ```startAt``` _first_ and ```limitToLast``` _second_, so it reads from the bottom and stops after 3 records
+- Scenario 5 is the same as scenario 4, but because the limit is 10 instead of 3, you'll see that the it reads from the bottom of the list and ***ends at!*** record "5". Get that!?! We used the parameter ```startAt("5")``` to create a query that _ends at_ "5"!
+- ***Take Away***: Don't mix ```startAt``` and ```limitToLast``` unless you're willing to pay close attention to the order in which you call the parameters. Calling ```limitToLast``` before ```startAt``` is identical to using ```limitToFirst``` and ```startAt```, whereas using ```startAt``` _and then_ ```limitToLast``` reads from the bottom to the top and _ends at_ the ```startAt``` value! 😖
+
+Scenarios 6, 7, 8, and 9 operate as expected... parameter order does not matter
+
+Scenarios 10, 11, and 12 are the inverse of 3, 4, and 5. The order in which you call the parameters matters.
+
+If you're having trouble conceptualizing this, here's a quick way to simplify the situation: Always call the query range (```startAt``` or ```endAt```) first. Call the ```limitTo*``` second.
+
+***A note on orderBy* methods***
+We're ordering by key in this example, but ordering by child, value or priority works the same. Firebase will first try to sort the keys/children/priorities/values numerically, and then it will sort them as strings... so if you have a mix of numbers and strings, the numbers will sort to the top and the strings to the bottom.
 
 You'll typically avoid this confusion by remembering that mixing numbers and strings on a sort is ridiculous.
-
 
 ### Pagination Exercise
 Firebase does not have built in pagination. Firebase collections are meant to be consumed as streams of data, so imagine running a query like ```fruitRef.orderByKey().limitToLast(3).on('child_added', callback)```. Your callback will get called three times, once for each of the last three results. But imagine a scenario where users are adding more fruit in realtime... so pretty soon your callback will fire again for ```"11": "artichoke"``` or whatever else your users are adding. If you're listening to the ```child_removed``` event on the same query, you'll get a callback there as well because ```"8": "grapefruit"``` has just fallen off of the query.

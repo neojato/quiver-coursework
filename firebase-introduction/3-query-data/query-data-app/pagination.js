@@ -12,7 +12,7 @@ var peopleUrl = peopleRef.toString() + '.json?shallow=true';
 var pageLength = 2;
 
 console.log('here');
-peopleRef.orderByKey().startAt("5").limitToLast(10).on('child_added', function (snap) {
+peopleRef.orderByKey().equalTo("5").on('child_added', function (snap) {
   console.log(snap.getKey());
 });
 
