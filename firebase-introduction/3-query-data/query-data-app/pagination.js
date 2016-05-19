@@ -2,7 +2,7 @@ var firebase = require('firebase');
 var axios = require('axios');
 
 firebase.initializeApp({
-  "serviceAccount": "./service-account.json",
+  "serviceAccount": "../../../service-account.json",
   "databaseURL": "https://quiver-two.firebaseio.com/"
 });
 
@@ -15,7 +15,7 @@ var getPages = function (accumulator, cursor) {
   var pages = accumulator || [];
   var query = peopleRef.orderByKey().limitToFirst(pageLength + 1);
   if (cursor) {
-    query.startAt(cursor); // If no cursor, start at beginning of collection
+    query = query.startAt(cursor); // If no cursor, start at beginning of collection
   }
 
   return query.once('value')
@@ -40,7 +40,10 @@ var getPages = function (accumulator, cursor) {
       }
     });
 };
-console.log(getPages());
+getPages()
+  .then(function (pages) {
+    console.log('pages', JSON.stringify(pages));
+  });
 
 // axios.get(peopleUrl)
 //   .then(function (res) {
