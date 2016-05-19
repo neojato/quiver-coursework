@@ -87,7 +87,7 @@ Firebase queries are modifications of a ref. So you'll create a ref as usual, bu
 Query orders are ***NOT*** respected by the ```ref.on('value', callback)``` event. ```value``` events return objects as JSON, and JSON does not have ordered children. I know... obnoxious. But that's JSON for you. If you care to receive your data from Firebase in the specified order, make sure to use ```ref.on('child_added', callback)```, because it will be called once for each existing child, and it will be called in order. So aggregated your children into an array manually, and you'll have ordered children!
 
 ### Specify how you want to order your query
-An orderBy* parameter is required for any query. You can't apply a query range, i.e., ```startAt(...)```, or a query limit, i.e., ```limitToLast(...)```, without first specifying how you want to order your query.
+An orderBy* parameter is required for any query. You can't apply a query range, i.e., ```startAt(...)```, or a query limit, i.e., ```limitToLast(...)```, without first specifying how you want to order your query. So apply orderBy* ***first***!
 
 You have four options for ordering queries:
 - orderByKey
@@ -125,13 +125,20 @@ Query ranges are optional and specify start and end points for your query. You'v
 - endAt
 - equalTo
 
-```ref.startAt('someKey')``` and ```ref.endAt('someKey')``` are self explanatory. ```ref.equalTo('someKey')``` is a startAt and and endAt query combined. You're not allowed to use more than one of these query range statements on a single ref, so Firebase provides the ```equalTo``` range to let you specify both.
+```ref.startAt('someKey')``` is used with a ```limitToFirst``` statement to read from the top of a list (ascending order) and to start somewhere in the middle of the list. Omitting the ```startAt``` while using a ```limitToFirst``` would cause the query to read from the very top of the list.
 
-Let's assume that we have an object with zero-indexed keys, much like a Javascript array. Note, zero-indexed keys are a Firebase anti-pattern, but they make this demonstration much easier.
+```ref.endAt('someKey')``` is used with a ```limitToLast``` statement to read from the bottom of a list (descending order) and to start somewhere in the middle of the list. Omitting the ```endAt``` while using a ```limitToLast``` would cause the query to read from the very bottom of the list.
+ 
+```ref.equalTo('someKey')``` is a ```startAt``` and an ```endAt``` query combined. You're not allowed to use more than one of these query range statements on a single ref, so Firebase provides the ```equalTo``` range to let you specify both.
+
+Note that using ```startAt``` with ```limitToLast``` or ```endAt``` with ```limitToFirst``` produces unexpected behavior. You'll see why in a few paragraphs... it's harder to explain with words than with an example.
+
+So let's assume that we have an object with zero-indexed keys, much like a Javascript array. Numeric keys are a Firebase anti-pattern. Notice that we don't have a key "10", because keys are always alpha-sorted and "10" would sort like this: "0", "1", "10", "2", "3"...
+
+Again, numeric keys are a Firebase anti-pattern. We should be using push keys... but push keys make for horrible demos, because humans don't sort long alphanumeric keys in our heads. 
 
 ```
 "fruit": {
- "0": "apple",
  "1": "banana",
  "2": "pear",
  "3": "orange",
@@ -140,12 +147,12 @@ Let's assume that we have an object with zero-indexed keys, much like a Javascri
  "6": "pineapple",
  "7": "strawberry",
  "8": "grapefruit",
- "9": "cranberry",
- "10": "lettuce"
+ "9": "cranberry"
+ "10": "tangerine"
 }
 ``` 
 
-Let's assume a ```fruitRef``` that points to the "fruit" node. "If we call ```fruitRef.orderByKey().endAt("5")```, we'll receive keys 0...5. If we call ```fruitRef.orderByKey().startAt("5")```, we'll receive keys 5...10. It's pretty straightforward. If we run ```fruitRef.orderByKey().equalTo("5")```... well, you get the pattern... it returns key ```"5": "tomato"```. 
+Let's assume a ```fruitRef``` that points to the "fruit" node. "If we call ```fruitRef.orderByKey().endAt("5")```, we'll receive keys 1...5. If we call ```fruitRef.orderByKey().startAt("5")```, we'll receive keys 5...10. It's pretty straightforward. If we run ```fruitRef.orderByKey().equalTo("5")```... well, you get the pattern... it returns key ```"5": "tomato"```. 
 
 ### Limit results
 Query orders and ranges are useful on their own, but they hit their stride when combined with limit statements. You'll want to use limits for most of your queries to avoid pulling down any more data than necessary.
@@ -158,14 +165,23 @@ Let's refer back to the fruit "array" we used earlier and run through a few scen
 
 - ```fruitRef.orderByKey().limitToLast(3)```: returns keys 8, 9, 10
 - ```fruitRef.orderByKey().limitToFirst(3)```: returns keys 1, 2, 3
-- ```fruitRef.orderByKey().startAt("5").limitToLast(3)```: returns keys 8, 9, 10 ***note*** kind of useless
+- ```fruitRef.orderByKey().limitToLast(3).startAt("5")```: returns keys 5, 6, 7 ***order matters***
+- ```fruitRef.orderByKey().startAt("5").limitToLast(3)```: returns keys 8, 9, 10 ***order matters***
+- ```fruitRef.orderByKey().startAt("5").limitToLast(10)```: returns keys 5, 6, 7, 8, 9, 10 ***bookend***
+- ```fruitRef.orderByKey().limitToFirst(3).startAt("5")```: returns keys 5, 6, 7
 - ```fruitRef.orderByKey().startAt("5").limitToFirst(3)```: returns keys 5, 6, 7
+- ```fruitRef.orderByKey().limitToLast(3).endAt("5")```: returns keys 3, 4, 5
 - ```fruitRef.orderByKey().endAt("5").limitToLast(3)```: returns keys 3, 4, 5
-- ```fruitRef.orderByKey().endAt("5").limitToFirst(3)```: returns keys 1, 2, 3 ***note*** kind of useless
+- ```fruitRef.orderByKey().limitToFirst(3).endAt("5")```: returns keys 3, 4, 5 ***order matters***
+- ```fruitRef.orderByKey().endAt("5").limitToFirst(3)```: returns keys 1, 2, 3 ***order matters***
+- ```fruitRef.orderByKey().endAt("5").limitToFirst(10)```: returns keys 1, 2, 3, 4, 5 ***booken***
 
-We're ordering by key here, but ordering by child, value or priority works exactly the same. It runs an alphanumeric sort on the child, priority or value.
+Notice that using a ```startAt``` with a ```limitToLast``` or an ```endAt``` with a ```limitToFirst``` is kind of pointless unless you're looking to "bookend" the result set.
 
-Notice that using a ```startAt``` with a ```limitToLast``` or an ```endAt``` with a ```limitToFirst``` is kind of pointless unless you're looking to somehow "bookend" the result set.
+We're ordering by key here, but ordering by child, value or priority works the same. Firebase will first try to sort the keys/children/priorities/values numerically, and then it will sort them as strings... so if you have a mix of number and strings, the numbers will sort to the top and the strings toward the bottom.
+
+You'll typically avoid this confusion by remembering that mixing numbers and strings on a sort is ridiculous.
+
 
 ### Pagination Exercise
 Firebase does not have built in pagination. Firebase collections are meant to be consumed as streams of data, so imagine running a query like ```fruitRef.orderByKey().limitToLast(3).on('child_added', callback)```. Your callback will get called three times, once for each of the last three results. But imagine a scenario where users are adding more fruit in realtime... so pretty soon your callback will fire again for ```"11": "artichoke"``` or whatever else your users are adding. If you're listening to the ```child_removed``` event on the same query, you'll get a callback there as well because ```"8": "grapefruit"``` has just fallen off of the query.
@@ -219,4 +235,140 @@ Now check your Firebase Realtime Database viewer at ```/swapi/people``` to make 
 
 We're going to demonstrate two ways to paginate through this list, each with its own costs and benefits.
 
-###
+### Cursor pagination
+Cursor pagination scales forever, but you have to step forwards or backwards through the pages one at a time. You don't know how many total pages you have, and you can't skip pages.
+
+In this example we have 10 records indexed 1...10 and a page length of 2 records per page. You simply request 3 records, pop the third record off to use as a cursor, and add the first 2 records to the page.
+
+The following example recursively gets all of the pages and spits out an array of pages. Try running this code on your own machine to see it in action. Make sure to edit the path to your ```service-account.json``` if it's different, and definitly change your ```databaseURL``` to match your Firebase. Also make sure that you've run ```load-swapi-data.js``` to populate your ```swapi/people``` node.  
+
+***Cursor Pagination***
+```
+var firebase = require('firebase');
+var axios = require('axios');
+
+firebase.initializeApp({
+  "serviceAccount": "./service-account.json",
+  "databaseURL": "https://quiver-two.firebaseio.com/"
+});
+
+var ref = firebase.app().database().ref();
+var peopleRef = ref.child('swapi/people');
+// Calling ref.toString() outputs the ref's entire path: https://...firebaseio.com/some/ref/path
+var peopleUrl = peopleRef.toString() + '.json?shallow=true'; 
+var pageLength = 2;
+
+var getPages = function (accumulator, cursor) {
+  var pages = accumulator || [];
+  var query = peopleRef.orderByKey().limitToFirst(pageLength + 1); // limitToFirst starts from the top of the sorted list
+  if (cursor) { // If no cursor, start at beginning of collection... otherwise, start at the cursor
+    query = query.startAt(cursor);  // Don't forget to overwrite the query variable!
+  }
+
+  return query.once('value')
+    .then(function (snaps) {
+      var page = [];
+      var extraRecord;
+      snaps.forEach(function (childSnap) {
+        page.push({
+          id: childSnap.getKey(),
+          name: childSnap.val().name
+        });
+      });
+      
+      if (page.length > pageLength) {
+        extraRecord = page.pop();
+        pages.push(page);
+        console.log(pages, extraRecord.id);
+        return getPages(pages, extraRecord.id);
+      } else {
+        pages.push(page);
+        return Promise.resolve(pages);
+      }
+    });
+};
+getPages()
+  .then(function (pages) {
+    console.log('pages', JSON.stringify(pages));
+  });
+```
+
+### Keys-based pagination
+Keys-based pagination differs from cursor pagination in that you first request all of the child keys using a REST call and then create page breaks from the list of keys. It's great when you have a limited number of child records, because you know exactly how many pages you have and you can jump backwards and forwards through the pagination.
+
+The following example uses keys-based pagination to return an array of all of the pages. Note, this is just an example. You'd never request all of the data right off the bat like this. In regular, non-demo practice you'll create a list of page keys and only request the data as needed when your user jumps to a specific page.
+
+Try running this locally like you did for the cursor pagination code to see it in action.
+
+***Keys-based Pagination***
+```
+var firebase = require('firebase');
+var axios = require('axios');
+
+firebase.initializeApp({
+  "serviceAccount": "../../../service-account.json",
+  "databaseURL": "https://quiver-two.firebaseio.com/"
+});
+
+var ref = firebase.app().database().ref();
+var peopleRef = ref.child('swapi/people');
+var peopleUrl = peopleRef.toString() + '.json?shallow=true';
+var pageLength = 2;
+
+axios.get(peopleUrl)
+  .then(function (res) {
+    var keys = Object.keys(res.data).sort(function (a) {
+      // We're sorting with parseInt because we're using SWAPI keys.
+      // Firebase push keys work fine with the default sort, i.e., Object.keys(res.data).sort();
+      return parseInt(a);
+    }).reverse(); // Always sort keys to guarantee order!!!
+    var keysLength = keys.length;
+    var promises = [];
+
+    for (var i = pageLength; i <= keysLength; i += pageLength) {
+      // i =  2, 4, 6, 8, 10... so subtract 1 to get the zero-indexed array key
+      var key = keys[i - 1]; 
+      // limitToLast starts at the bottom and reads up the list. endAt tells us from
+      // where to start reading up... so if we have keys 1...10, a pageLength of 2
+      // and endAt(4), the query will return records 4 and 3. It starts at the end
+      // and reads backwards, returning only 2 records. 
+      var query = peopleRef.orderByKey().limitToLast(pageLength).endAt(key);
+      promises.push(query.once('value'));
+    }
+
+    Promise.all(promises)
+      .then(function (snaps) {
+        var pages = [];
+        snaps.forEach(function (snap) {
+          var page = [];
+          snap.forEach(function (childSnap) {
+            page.push({
+              id: childSnap.getKey(),
+              name: childSnap.val().name
+            });
+          });
+          pages.push(page);
+        });
+        pages.forEach(function (page, key) {
+          console.log('page %s: %s', key, JSON.stringify(page));
+        });
+        process.exit();
+      })
+      .catch(function (err) {
+        console.log('error', err);
+      });
+  });
+```
+### A quick summary, because this can be confusing
+Let's be clear. These queries can be tricky to compose. I played around for about an hour to get both of these pagination examples working, and it wasn't the first time that I've written these kinds of pagination.
+
+Here's what you need to remember:
+- Always specify your ```orderBy*``` parameter first
+- Use ```limitToFirst``` to read from the top of the list (ascending sort order)
+- Use ```limitToLast``` to read from the bottom of the list (descending sort order)
+- If you're using ```limitToFirst```, use ```startAt``` to start reading from the middle of the list. Otherwise, ```limitToFirst``` will default to reading from the very top of the list.
+- If you're using ```limitToLast```, use ```endAt``` to start reading from the middle of the list. Otherwise, ```limitToLast``` will default to reading from the very bottom of the list.
+- Don't pair up ```limitToFirst``` with ```endAt```.
+- Don't pair up ```limitToLast``` with ```startAt```.
+
+That's Firebase queries. Play around with these pagination examples and you'll get the hang of it.
