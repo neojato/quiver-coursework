@@ -1,0 +1,23 @@
+{
+    "users": {
+        "user1": {
+            "email": "user1@gmail.com",
+            "transactions": {
+                "transaction1": {
+                    "total": "500",
+                    "products": {
+                        "product1": "paper airplanes",
+                        "product2": "tooth picks"
+                    }
+                },
+                "transaction2": {
+                    "total": "250",
+                    "products": {
+                        "product1": "rocks and dirt",
+                        "product2": "spatulas"
+                    }
+                }
+            }
+        }
+    }
+}

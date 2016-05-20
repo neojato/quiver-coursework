@@ -226,9 +226,9 @@ firebase.initializeApp({
 var ref = firebase.app().database().ref();
 var peopleRef = ref.child('/swapi/people');
 var promises = [];
-var i = 80;
+var i = 10;
 while (i--) {
-  promises.push(getSwapiPerson(i + 1) //  i will be 79...0, so add 1 to match the SWAPI api
+  promises.push(getSwapiPerson(i + 1) //  i will be 9...0, so add 1 to match the SWAPI api
     .then(function(res) {
       return peopleRef.child(res.id).set(res.person);
     }));
@@ -245,7 +245,7 @@ Promise.all(promises)
   })
 ```
 
-Now check your Firebase Realtime Database viewer at ```/swapi/people``` to make sure that you have 80 Star Wars characters stored in the collection. They're currently indexed by their SWAPI person number. I would typically recommend using push keys with ```peopleRef.push(res.person);```, but SWAPI has person ID numbers already, so matching those won't hurt. Just don't try to create your own ID system... when in doubt, use push keys.
+Now check your Firebase Realtime Database viewer at ```/swapi/people``` to make sure that you have 10 Star Wars characters stored in the collection. They're currently indexed by their SWAPI person number. I would typically recommend using push keys with ```peopleRef.push(res.person);```, but SWAPI has person ID numbers already, so matching those won't hurt. Just don't try to create your own ID system... when in doubt, use push keys.
 
 We're going to demonstrate two ways to paginate through this list, each with its own costs and benefits.
 
