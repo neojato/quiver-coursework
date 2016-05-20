@@ -1,0 +1,33 @@
+{
+    "userQueues": {
+        "changeUsername": {
+            "user1": {
+                "proposedUsername": "T-Rex"
+            }
+        },
+        "cartCheckout": {
+            "user5": {
+                "total": 750,
+                "products": {
+                    "somePushKey": "tongue depressors",
+                    "anotherPushKey": "deoderant"
+                }
+            }
+        }
+    },
+    "serverQueues": {
+        "updateUsername": {
+            "somePushKey": {
+                "user": "user1",
+                "username": "T-Rex"
+            }
+        },
+        "chargeCard": {
+            "somePushKey": {
+                "user": "user1",
+                "total": 750,
+                "cartToken": "1234asdf"
+            }
+        }
+    }
+}

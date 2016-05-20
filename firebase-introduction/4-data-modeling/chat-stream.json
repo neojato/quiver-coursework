@@ -1,0 +1,20 @@
+{
+    "chats": {
+        "chat1": {
+            "user": "user1",
+            "message": "First!"
+        },
+        "chat2": {
+            "user": "user2",
+            "message": "Hey user one."
+        },
+        "chat3": {
+            "user": "user2",
+            "message": "Where did you go?"
+        },
+        "chat4": {
+            "user": "user1",
+            "message": "I'm still here..."
+        }
+    }
+}
