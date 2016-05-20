@@ -7,13 +7,33 @@ firebase.initializeApp({
 });
 
 var ref = firebase.app().database().ref();
-var peopleRef = ref.child('swapi/people');
+var peopleRef = ref.child('swapi/test');
+peopleRef.set([
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "Eight",
+  "nine",
+  "ten"
+])
 var peopleUrl = peopleRef.toString() + '.json?shallow=true';
 var pageLength = 2;
 
 console.log('here');
-peopleRef.orderByKey().equalTo("5").on('child_added', function (snap) {
-  console.log(snap.getKey());
+
+peopleRef.once("value", function (ss) {
+  console.log(ss.val())
+})
+peopleRef.orderByKey().startAt("5").limitToLast(3).once('value', function (snap) {
+  console.log('sl', snap.val());
+});
+
+peopleRef.orderByKey().limitToLast(3).startAt("4").once('value', function (snap) {
+  console.log('ls', snap.val());
 });
 
 // var getPages = function (accumulator, cursor) {
